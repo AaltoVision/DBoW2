@@ -159,7 +159,7 @@ public:
  */
 class DLL_EXPORT QueryResults : public std::vector<Result> {
 public:
-  /** 
+  /**
    * Multiplies all the scores in the vector by factor
    * @param factor
    */
@@ -173,8 +173,8 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const QueryResults& ret);
 
   /**
-   * Saves a matlab file with the results 
-   * @param filename 
+   * Saves a matlab file with the results
+   * @param filename
    */
   void saveM(const std::string& filename) const;
 };

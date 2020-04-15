@@ -44,7 +44,7 @@ public:
   /**
    * Creates an empty database without vocabulary
    * @param use_di a direct index is used to store feature indexes
-   * @param di_levels levels to go up the vocabulary tree to select the 
+   * @param di_levels levels to go up the vocabulary tree to select the
    *   node id to store in the direct index when adding images
    */
   explicit TemplatedDatabase(const bool use_di = true, const int di_levels = 0);
@@ -54,7 +54,7 @@ public:
    * @param T class inherited from TemplatedVocabulary<TDescriptor, F>
    * @param voc vocabulary
    * @param use_di a direct index is used to store feature indexes
-   * @param di_levels levels to go up the vocabulary tree to select the 
+   * @param di_levels levels to go up the vocabulary tree to select the
    *   node id to store in the direct index when adding images
    */
   template<class T>
@@ -66,13 +66,13 @@ public:
    */
   TemplatedDatabase(const TemplatedDatabase<TDescriptor, F>& db);
 
-  /** 
+  /**
    * Creates the database from a file
    * @param filename
    */
   TemplatedDatabase(const std::string& filename);
 
-  /** 
+  /**
    * Creates the database from a file
    * @param filename
    */
@@ -103,7 +103,7 @@ public:
    * @param T class inherited from TemplatedVocabulary<TDescriptor, F>
    * @param voc vocabulary to copy
    * @param use_di a direct index is used to store feature indexes
-   * @param di_levels levels to go up the vocabulary tree to select the 
+   * @param di_levels levels to go up the vocabulary tree to select the
    *   node id to store in the direct index when adding images
    */
   template<class T>
@@ -115,9 +115,9 @@ public:
    */
   inline const TemplatedVocabulary<TDescriptor, F>* getVocabulary() const;
 
-  /** 
+  /**
    * Allocates some memory for the direct and inverted indexes
-   * @param nd number of expected image entries in the database 
+   * @param nd number of expected image entries in the database
    * @param ni number of expected words per image
    * @note Use 0 to ignore a parameter
    */
@@ -147,7 +147,7 @@ public:
   inline void clear();
 
   /**
-   * Returns the number of entries in the database 
+   * Returns the number of entries in the database
    * @return number of entries in the database
    */
   inline unsigned int size() const;
@@ -169,7 +169,7 @@ public:
    * @param features query features
    * @param ret (out) query results
    * @param max_results number of results to return. <= 0 means all
-   * @param max_id only entries with id <= max_id are returned in ret. 
+   * @param max_id only entries with id <= max_id are returned in ret.
    *   < 0 means all
    */
   void query(const std::vector<TDescriptor>& features, QueryResults& ret,
@@ -180,7 +180,7 @@ public:
    * @param vec bow vector already normalized
    * @param ret results
    * @param max_results number of results to return. <= 0 means all
-   * @param max_id only entries with id <= max_id are returned in ret. 
+   * @param max_id only entries with id <= max_id are returned in ret.
    *   < 0 means all
    */
   void query(const BowVector& vec, QueryResults& ret,
@@ -206,7 +206,7 @@ public:
    */
   void load(const std::string& filename);
 
-  /** 
+  /**
    * Stores the database in the given file storage structure
    * @param fs
    * @param name node name
@@ -214,7 +214,7 @@ public:
   virtual void save(cv::FileStorage& fs,
                     const std::string& name = "database") const;
 
-  /** 
+  /**
    * Loads the database from the given file storage structure
    * @param fs
    * @param name node name

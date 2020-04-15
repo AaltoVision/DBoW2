@@ -84,7 +84,7 @@ public:
   void addIfNotExist(const WordId id, const WordValue v);
 
   /**
-   * L1-Normalizes the values in the vector 
+   * L1-Normalizes the values in the vector
    * @param norm_type norm used
    */
   void normalize(const LNorm norm_type);

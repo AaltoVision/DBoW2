@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 
   std::cout << "INPUT(" << in_ext << "): " << in_file << std::endl;
   std::cout << "OUTPUT(" << out_ext << "): " << out_file << std::endl;
- 
+
   auto vocab = std::unique_ptr<ORBVocabulary>(new ORBVocabulary());
 
   if (in_ext == "txt") {

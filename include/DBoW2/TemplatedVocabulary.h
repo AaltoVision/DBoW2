@@ -2,7 +2,7 @@
  * File: TemplatedVocabulary.h
  * Date: February 2011
  * Author: Dorian Galvez-Lopez
- * Description: templated vocabulary 
+ * Description: templated vocabulary
  * License: see the LICENSE.txt file
  */
 
@@ -61,7 +61,7 @@ public:
    */
   TemplatedVocabulary(const char* filename);
 
-  /** 
+  /**
    * Copy constructor
    * @param voc
    */
@@ -72,7 +72,7 @@ public:
    */
   virtual ~TemplatedVocabulary();
 
-  /** 
+  /**
    * Assigns the given vocabulary to this by copying its data and removing
    * all the data contained by this vocabulary before
    * @param voc
@@ -80,7 +80,7 @@ public:
    */
   TemplatedVocabulary<TDescriptor, F>& operator=(const TemplatedVocabulary<TDescriptor, F>& voc);
 
-  /** 
+  /**
    * Creates a vocabulary from the training features with the already
    * defined parameters
    * @param training_features
@@ -173,7 +173,7 @@ public:
    */
   inline int getBranchingFactor() const { return m_k; }
 
-  /** 
+  /**
    * Returns the depth levels of the tree (L)
    * @return L
    */
@@ -199,13 +199,13 @@ public:
    */
   virtual inline WordValue getWordWeight(WordId wid) const;
 
-  /** 
+  /**
    * Returns the weighting method
    * @return weighting method
    */
   inline WeightingType getWeightingType() const { return m_weighting; }
 
-  /** 
+  /**
    * Returns the scoring method
    * @return scoring method
    */
@@ -259,7 +259,7 @@ public:
    */
   void load(const std::string& filename);
 
-  /** 
+  /**
    * Saves the vocabulary to a file storage structure
    * @param fn node in file storage
    */
@@ -275,15 +275,15 @@ public:
   virtual void load(const cv::FileStorage& fs,
                     const std::string& name = "vocabulary");
 
-  /** 
+  /**
    * Stops those words whose weight is below minWeight
    * @details Words are stopped by setting their weight to 0. There are not returned
    *          later when transforming image features into vectors.
    *          Note that when using IDF or TF_IDF, the weight is the idf part, which
    *          is equivalent to -log(f), where f is the frequency of the word
-   *          (f = Ni/N, Ni: number of training images where the word is present, 
+   *          (f = Ni/N, Ni: number of training images where the word is present,
    *          N: number of training images).
-   * @note The old weight is forgotten, and subsequent calls to this 
+   * @note The old weight is forgotten, and subsequent calls to this
    *       function with a lower minWeight have no effect.
    * @return number of words stopped now
    */
@@ -335,7 +335,7 @@ protected:
    */
   void createScoringObject();
 
-  /** 
+  /**
    * Returns a set of pointers to descriptores
    * @param training_features all the features
    * @param features (out) pointers to the training features
@@ -382,7 +382,7 @@ protected:
   /**
    * Creates k clusters from the given descriptor sets by running the
    * initial step of kmeans++
-   * @param descriptors 
+   * @param descriptors
    * @param clusters resulting clusters
    */
   void initiateClustersKMpp(const std::vector<pDescriptor>& descriptors,

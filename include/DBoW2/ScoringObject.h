@@ -2,7 +2,7 @@
  * File: ScoringObject.h
  * Date: November 2011
  * Author: Dorian Galvez-Lopez
- * Description: functions to compute bow scores 
+ * Description: functions to compute bow scores
  * License: see the LICENSE.txt file
  */
 
@@ -25,7 +25,7 @@ namespace DBoW2 {
 class DLL_EXPORT GeneralScoring {
 public:
   /**
-   * Computes the score between two vectors. Vectors must be sorted and 
+   * Computes the score between two vectors. Vectors must be sorted and
    * normalized if necessary
    * @param v (in/out)
    * @param w (in/out)
@@ -49,7 +49,7 @@ public:
   virtual ~GeneralScoring() {} //!< Required for virtual base classes
 };
 
-/** 
+/**
  * Macro for defining Scoring classes
  * @param NAME name of class
  * @param MUSTNORMALIZE if vectors must be normalized to compute the score
