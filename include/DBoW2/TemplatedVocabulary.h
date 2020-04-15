@@ -442,6 +442,9 @@ protected:
   //! Tree nodes
   std::vector<Node> m_nodes;
 
+  //! Storage for descriptors.
+  cv::Mat all_descriptors;
+
   //! Words of the vocabulary (tree leaves)
   //! this condition holds: m_words[wid]->word_id == wid
   std::vector<Node*> m_words;
@@ -1389,33 +1392,55 @@ void TemplatedVocabulary<TDescriptor, F>::loadFromBinaryFile(const std::string& 
   m_nodes.resize(n_nodes);
   m_nodes.at(0).id = 0;
 
-  char* buf = new char[node_size];
+  const unsigned int N = 10 * 1024;
+  const unsigned int BUF_SIZE = N * node_size;
+
+  char* buf = new char[BUF_SIZE];
   unsigned int n_id = 1;
 
+  // Allocate once.
+  all_descriptors = cv::Mat(1, n_nodes * F::L, CV_8U);
+
   while (!ifs.eof()) {
-    ifs.read(buf, node_size);
-    m_nodes.at(n_id).id = n_id;
-    const int* ptr = (int*)buf;
-
-    m_nodes.at(n_id).parent = *ptr;
-    m_nodes.at(m_nodes.at(n_id).parent).children.push_back(n_id);
-    m_nodes.at(n_id).descriptor = cv::Mat(1, F::L, CV_8U);
-
-    memcpy(m_nodes.at(n_id).descriptor.data, buf + 4, F::L);
-    m_nodes.at(n_id).weight = *reinterpret_cast<float*>(buf + 4 + F::L);
-
-    if (buf[8 + F::L]) {
-      const int w_id = m_words.size();
-      m_words.resize(w_id + 1);
-      m_nodes.at(n_id).word_id = w_id;
-      m_words.at(w_id) = &m_nodes.at(n_id);
-    }
-    else {
-      m_nodes.at(n_id).children.reserve(m_k);
+    unsigned int read = BUF_SIZE;
+    ifs.read(buf, BUF_SIZE);
+    if (!ifs) {
+      read = ifs.gcount();
     }
 
-    ++n_id;
-    if (n_id == n_nodes) {
+    int read_nodes = read / node_size;
+    assert(read % node_size == 0);
+    assert(read_nodes > 0);
+    for (int i = 0; i < read_nodes; ++i) {
+      unsigned int j = n_id - 1;
+      unsigned int offset = i * node_size;
+
+      m_nodes.at(n_id).id = n_id;
+      const int* ptr = (int*)(buf + offset);
+
+      m_nodes.at(n_id).parent = *ptr;
+      m_nodes.at(m_nodes.at(n_id).parent).children.push_back(n_id);
+
+      // Point node descriptor to slice in `all_descriptors`.
+      unsigned char* descriptor = all_descriptors.data + j * F::L;
+      memcpy(descriptor, buf + offset + 4, F::L);
+      m_nodes.at(n_id).descriptor = cv::Mat(1, F::L, CV_8U, descriptor);
+
+      m_nodes.at(n_id).weight = *reinterpret_cast<float*>(buf + offset + 4 + F::L);
+
+      if (buf[offset + 8 + F::L]) {
+        const int w_id = m_words.size();
+        m_words.resize(w_id + 1);
+        m_nodes.at(n_id).word_id = w_id;
+        m_words.at(w_id) = &m_nodes.at(n_id);
+      }
+      else {
+        m_nodes.at(n_id).children.reserve(m_k);
+      }
+
+      ++n_id;
+    }
+    if (n_id == n_nodes || !ifs) {
       break;
     }
   }
