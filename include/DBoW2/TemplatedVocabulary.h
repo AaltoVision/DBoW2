@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <vector>
+#include <set>
 #include <numeric>
 #include <fstream>
 #include <string>
@@ -113,6 +114,11 @@ public:
   virtual inline unsigned int size() const;
 
   /**
+   * @return number of nodes
+   */
+  virtual inline unsigned int size_nodes() const;
+
+  /**
    * Returns whether the vocabulary is empty (i.e. it has not been trained)
    * @return true iff the vocabulary is empty
    */
@@ -130,10 +136,16 @@ public:
    * @param features
    * @param v (out) bow vector
    * @param fv (out) feature vector of nodes and feature indexes
-   * @param levelsup levels to go up the vocabulary tree to get the node index
+   * @param levelsup_direct levels to go up the vocabulary tree to get the node index for FeatureVector
+   * @param levelsup_inverse levels to go up the vocabulary tree to get the node index for BowVector
    */
-  virtual void transform(const std::vector<TDescriptor>& features, BowVector& v, FeatureVector& fv,
-                         const int levelsup) const;
+  virtual void transform(
+    const std::vector<TDescriptor>& features,
+    BowVector& v,
+    FeatureVector& fv,
+    const int levelsup_direct,
+    const int levelsup_inverse
+  ) const;
 
   /**
    * Transforms a single feature into a word (without weight)
@@ -394,12 +406,18 @@ protected:
   void createWords();
 
   /**
-   * Sets the weights of the nodes of tree according to the given features.
+   * Sets the weights of the words of tree according to the given features.
    * Before calling this function, the nodes and the words must be already
    * created (by calling HKmeansStep and createWords)
    * @param features
    */
-  void setNodeWeights(const std::vector<std::vector<TDescriptor>>& features);
+  void setWordWeights(const std::vector<std::vector<TDescriptor>>& features);
+
+  /**
+   * Set node weights as sum of the children's weights, starting with weights
+   * computed for the words.
+   */
+  void setNodeWeights();
 
   /**
    * Returns a random number in the range [min..max]
@@ -588,7 +606,8 @@ void TemplatedVocabulary<TDescriptor, F>::create(
   createWords();
 
   // and set the weight of each node of the tree
-  setNodeWeights(training_features);
+  setWordWeights(training_features);
+  setNodeWeights();
 }
 
 // --------------------------------------------------------------------------
@@ -905,7 +924,7 @@ void TemplatedVocabulary<TDescriptor, F>::createWords() {
 // --------------------------------------------------------------------------
 
 template<class TDescriptor, class F>
-void TemplatedVocabulary<TDescriptor, F>::setNodeWeights(const std::vector<std::vector<TDescriptor>>& training_features) {
+void TemplatedVocabulary<TDescriptor, F>::setWordWeights(const std::vector<std::vector<TDescriptor>>& training_features) {
   const unsigned int NWords = m_words.size();
   const unsigned int NDocs = training_features.size();
 
@@ -952,8 +971,41 @@ void TemplatedVocabulary<TDescriptor, F>::setNodeWeights(const std::vector<std::
 // --------------------------------------------------------------------------
 
 template<class TDescriptor, class F>
+void TemplatedVocabulary<TDescriptor, F>::setNodeWeights() {
+  std::set<NodeId> nodes;
+  std::set<NodeId> nodes_next;
+  typename std::vector<Node*>::const_iterator wit;
+  for (wit = m_words.begin(); wit != m_words.end(); ++wit) {
+    nodes_next.insert((*wit)->id);
+  }
+
+  do {
+    nodes.swap(nodes_next);
+    nodes_next.clear();
+    for (NodeId node_id : nodes) {
+      const Node &node = m_nodes[node_id];
+
+      Node &parent = m_nodes[node.parent];
+      parent.weight += node.weight;
+      if (node.id != 0) {
+        nodes_next.insert(parent.id);
+      }
+    }
+  } while (!nodes_next.empty());
+}
+
+// --------------------------------------------------------------------------
+
+template<class TDescriptor, class F>
 inline unsigned int TemplatedVocabulary<TDescriptor, F>::size() const {
   return m_words.size();
+}
+
+// --------------------------------------------------------------------------
+
+template<class TDescriptor, class F>
+inline unsigned int TemplatedVocabulary<TDescriptor, F>::size_nodes() const {
+  return m_nodes.size();
 }
 
 // --------------------------------------------------------------------------
@@ -1029,10 +1081,11 @@ void TemplatedVocabulary<TDescriptor, F>::transform(const std::vector<TDescripto
       // w is the idf value if TF_IDF, 1 if TF
 
       transform(*fit, id, w);
+      NodeId id_up = m_words[id]->id;
 
       // not stopped
       if (w > 0)
-        v.addWeight(id, w);
+        v.addWeight(id_up, m_nodes[id_up].weight);
     }
 
     if (!v.empty() && !must) {
@@ -1050,10 +1103,11 @@ void TemplatedVocabulary<TDescriptor, F>::transform(const std::vector<TDescripto
       // w is idf if IDF, or 1 if BINARY
 
       transform(*fit, id, w);
+      NodeId id_up = m_words[id]->id;
 
       // not stopped
       if (w > 0)
-        v.addIfNotExist(id, w);
+        v.addIfNotExist(id_up, m_nodes[id_up].weight);
 
     } // if add_features
   }   // if m_weighting == ...
@@ -1065,8 +1119,13 @@ void TemplatedVocabulary<TDescriptor, F>::transform(const std::vector<TDescripto
 // --------------------------------------------------------------------------
 
 template<class TDescriptor, class F>
-void TemplatedVocabulary<TDescriptor, F>::transform(const std::vector<TDescriptor>& features,
-                                                    BowVector& v, FeatureVector& fv, const int levelsup) const {
+void TemplatedVocabulary<TDescriptor, F>::transform(
+  const std::vector<TDescriptor>& features,
+  BowVector& v,
+  FeatureVector& fv,
+  const int levelsup_direct,
+  const int levelsup_inverse
+) const {
   v.clear();
   fv.clear();
 
@@ -1089,11 +1148,12 @@ void TemplatedVocabulary<TDescriptor, F>::transform(const std::vector<TDescripto
       WordValue w;
       // w is the idf value if TF_IDF, 1 if TF
 
-      transform(*fit, id, w, &nid, levelsup);
+      transform(*fit, id, w, &nid, levelsup_direct);
+      NodeId id_up = getParentNode(id, levelsup_inverse);
 
       if (w > 0) // not stopped
       {
-        v.addWeight(id, w);
+        v.addWeight(id_up, m_nodes[id_up].weight);
         fv.addFeature(nid, i_feature);
       }
     }
@@ -1114,11 +1174,12 @@ void TemplatedVocabulary<TDescriptor, F>::transform(const std::vector<TDescripto
       WordValue w;
       // w is idf if IDF, or 1 if BINARY
 
-      transform(*fit, id, w, &nid, levelsup);
+      transform(*fit, id, w, &nid, levelsup_direct);
+      NodeId id_up = getParentNode(id, levelsup_inverse);
 
       if (w > 0) // not stopped
       {
-        v.addIfNotExist(id, w);
+        v.addIfNotExist(id_up, m_nodes[id_up].weight);
         fv.addFeature(nid, i_feature);
       }
     }
@@ -1331,6 +1392,8 @@ void TemplatedVocabulary<TDescriptor, F>::loadFromTextFile(const std::string& fi
       m_nodes.at(n_id).children.reserve(m_k);
     }
   }
+
+  setNodeWeights();
 }
 
 // --------------------------------------------------------------------------
@@ -1448,6 +1511,8 @@ void TemplatedVocabulary<TDescriptor, F>::loadFromBinaryFile(const std::string& 
   ifs.close();
 
   delete[] buf;
+
+  setNodeWeights();
 }
 
 // --------------------------------------------------------------------------
@@ -1651,6 +1716,8 @@ void TemplatedVocabulary<TDescriptor, F>::load(const cv::FileStorage& fs,
     m_nodes[nid].word_id = wid;
     m_words[wid] = &m_nodes[nid];
   }
+
+  setNodeWeights();
 }
 
 // --------------------------------------------------------------------------

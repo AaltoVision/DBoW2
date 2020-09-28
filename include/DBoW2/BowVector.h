@@ -57,7 +57,7 @@ enum ScoringType {
 /**
  * Vector of words to represent images
  */
-class DLL_EXPORT BowVector : public std::map<WordId, WordValue> {
+class DLL_EXPORT BowVector : public std::map<NodeId, WordValue> {
 public:
   /**
    * Constructor
@@ -74,14 +74,14 @@ public:
    * @param id word id to look for
    * @param v value to create the word with, or to add to existing word
    */
-  void addWeight(const WordId id, const WordValue v);
+  void addWeight(const NodeId id, const WordValue v);
 
   /**
    * Adds a word with a value to the vector only if this does not exist yet
    * @param id word id to look for
    * @param v value to give to the word if this does not exist
    */
-  void addIfNotExist(const WordId id, const WordValue v);
+  void addIfNotExist(const NodeId id, const WordValue v);
 
   /**
    * L1-Normalizes the values in the vector

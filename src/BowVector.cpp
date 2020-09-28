@@ -26,7 +26,7 @@ BowVector::~BowVector() {}
 
 // --------------------------------------------------------------------------
 
-void BowVector::addWeight(const WordId id, const WordValue v) {
+void BowVector::addWeight(const NodeId id, const WordValue v) {
   BowVector::iterator vit = this->lower_bound(id);
 
   if (vit != this->end() && !(this->key_comp()(id, vit->first))) {
@@ -39,7 +39,7 @@ void BowVector::addWeight(const WordId id, const WordValue v) {
 
 // --------------------------------------------------------------------------
 
-void BowVector::addIfNotExist(const WordId id, const WordValue v) {
+void BowVector::addIfNotExist(const NodeId id, const WordValue v) {
   BowVector::iterator vit = this->lower_bound(id);
 
   if (vit == this->end() || (this->key_comp()(id, vit->first))) {
@@ -90,7 +90,7 @@ std::ostream& operator<<(std::ostream& out, const BowVector& v) {
 void BowVector::saveM(const std::string& filename, const size_t W) const {
   std::fstream f(filename.c_str(), std::ios::out);
 
-  WordId last = 0;
+  NodeId last = 0;
   BowVector::const_iterator bit;
   for (bit = this->begin(); bit != this->end(); ++bit) {
     for (; last < bit->first; ++last) {
@@ -100,7 +100,7 @@ void BowVector::saveM(const std::string& filename, const size_t W) const {
 
     last = bit->first + 1;
   }
-  for (; last < (WordId)W; ++last)
+  for (; last < (NodeId)W; ++last)
     f << "0 ";
 
   f.close();
